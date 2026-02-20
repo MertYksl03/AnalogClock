@@ -1,0 +1,22 @@
+#define _POSIX_C_SOURCE 200809L
+#include <unistd.h>
+#include <stdlib.h>
+
+#include "header.h"
+#include "colors.h"
+
+
+//FUNCTION PROTOTYPES
+void process_input(SDL_Event event);
+int initialize_window();
+void update();
+void render();
+void QUIT();
+
+void drawMarkers(MarkerPosition* MarkerPositions);
+void calculateMarkerPositions(MarkerPosition* MarkerPositions, Circle clockCircle);
+void drawClockHands(Circle clockCircle);
+void calculateHourHandPosition(float* x_end, float* y_end, Circle clockCircle);
+void calculateMinuteHandPosition(float* x_end, float* y_end, Circle clockCircle);
+void calculateSecondHandPosition(float* x_end, float* y_end, Circle clockCircle);
+void DrawThickLine(SDL_Renderer* renderer, float x1, float y1, float x2, float y2, float thickness, Color color);
