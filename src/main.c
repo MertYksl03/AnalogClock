@@ -107,11 +107,21 @@ int main(int argc, char *argv[]) {
     is_running = initialize_window();
     // to handle the input
     SDL_Event event;    
-    
+
     while (is_running) {
+        u32 current_time = SDL_GetTicks();
         process_input(event);
         update();
         render();
+    
+        u32 target_time = last_frame_time + FRAME_TARGET_TIME;
+
+        if (!SDL_TICKS_PASSED(current_time, target_time)) {
+            // Calculate milliseconds remaining and sleep!
+            SDL_Delay(target_time - current_time); 
+        }
+
+        last_frame_time = SDL_GetTicks();
     }
 
     QUIT();
@@ -265,11 +275,6 @@ void update()
     currentTime.hour = current_time->tm_hour % 12;
     currentTime.minute = current_time->tm_min;
     currentTime.second = current_time->tm_sec;
-
-    //  //sleep until reach the frame target
-    while (!SDL_TICKS_PASSED(SDL_GetTicks(), last_frame_time + FRAME_TARGET_TIME));
-
-    last_frame_time = SDL_GetTicks();
 }
 
 void SDL_SetRenderDrawColorV(SDL_Renderer* renderer,struct Color color){
@@ -384,7 +389,6 @@ void drawClockHands(Circle clockCircle){
 
 void QUIT() {
   // Destroy renderer, window and quit
-//   SDL_FreeSurface(shapeSurface);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
