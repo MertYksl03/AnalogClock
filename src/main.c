@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
     // Defaults
     int radius = DEFAULT_RADIUS;
     u8 is_dark_theme = TRUE;
+    u8 is_daemon = FALSE; // Not used in this implementation, but can be added for future enhancements
     BackgroundColor = COLOR_BLACK;
     hourMarkerColor = COLOR_RAYWHITE;
     minuteMarkerColor = COLOR_RED;
@@ -44,7 +45,7 @@ int main(int argc, char *argv[]) {
     secondHandColor = COLOR_RED;
     
     
-    while ((opt = getopt(argc, argv, "s:ld")) != -1) {
+    while ((opt = getopt(argc, argv, "s:ldb")) != -1) {
         switch (opt) {
             case 's':
             radius = atoi(optarg); 
@@ -55,9 +56,20 @@ int main(int argc, char *argv[]) {
             case 'd':
             is_dark_theme = TRUE;
             break;
+            case 'b':
+            is_daemon = TRUE;
+            break;
             case '?': // getopt returns '?' for unknown options
             fprintf(stderr, "Usage: %s [-s radius] [-d]\n", argv[0]);
             return 1;
+        }
+    }
+
+    if (is_daemon) {
+        // Daemonize the process
+        if (daemon(1, 0) == -1) {
+            // fprintf(stderr, "Failed to daemonize process: %s\n", strerror(errno));
+            return 1; //return fork failed
         }
     }
 
@@ -104,7 +116,8 @@ int main(int argc, char *argv[]) {
 
     QUIT();
     return 0;
-    }
+}
+
 void DrawThickLine(SDL_Renderer* renderer, float x1, float y1, float x2, float y2, float thickness, Color color) {
     // 1. Get the direction of the line
     float dx = x2 - x1;
@@ -214,7 +227,8 @@ int initialize_window()
         fprintf(stderr,"Error creating SDL Renderer");
         return FALSE;
     }
-    
+
+    SDL_FreeSurface(shapeSurface);
     return TRUE;
 }
 
@@ -370,7 +384,7 @@ void drawClockHands(Circle clockCircle){
 
 void QUIT() {
   // Destroy renderer, window and quit
-  SDL_FreeSurface(shapeSurface);
+//   SDL_FreeSurface(shapeSurface);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
