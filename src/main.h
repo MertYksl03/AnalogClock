@@ -14,6 +14,7 @@ void update();
 void render();
 void QUIT();
 
+void print_current_time();
 void drawMarkers(MarkerPosition* MarkerPositions);
 void calculateMarkerPositions(MarkerPosition* MarkerPositions, Circle clockCircle);
 void drawClockHands(Circle clockCircle);

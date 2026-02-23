@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     // Defaults
     int radius = DEFAULT_RADIUS;
     u8 is_dark_theme = TRUE;
-    u8 is_daemon = FALSE; // Not used in this implementation, but can be added for future enhancements
+    u8 is_daemon = FALSE;
     BackgroundColor = COLOR_BLACK;
     hourMarkerColor = COLOR_RAYWHITE;
     minuteMarkerColor = COLOR_RED;
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     secondHandColor = COLOR_RED;
     
     
-    while ((opt = getopt(argc, argv, "s:ldb")) != -1) {
+    while ((opt = getopt(argc, argv, "s:ldbth")) != -1) {
         switch (opt) {
             case 's':
             radius = atoi(optarg); 
@@ -59,8 +59,19 @@ int main(int argc, char *argv[]) {
             case 'b':
             is_daemon = TRUE;
             break;
+            case 't':
+            print_current_time();
+            return 0;
+            case 'h':
+            fprintf(stderr, "Usage: %s [-s radius] [-d] [-l] [-b] [-t]\n", argv[0]);
+            fprintf(stderr, "  -s radius : Set the diameter of the clock (default: %d)\n", DEFAULT_RADIUS);
+            fprintf(stderr, "  -d        : Enable dark mode (default)\n");
+            fprintf(stderr, "  -l        : Enable light mode\n");
+            fprintf(stderr, "  -b        : Run as a background daemon\n");
+            fprintf(stderr, "  -t        : Print the current time and exit\n");
+            return 0;
             case '?': // getopt returns '?' for unknown options
-            fprintf(stderr, "Usage: %s [-s radius] [-d]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-s radius] [-d] [-l] [-b] [-t]\n", argv[0]);
             return 1;
         }
     }
@@ -68,7 +79,6 @@ int main(int argc, char *argv[]) {
     if (is_daemon) {
         // Daemonize the process
         if (daemon(1, 0) == -1) {
-            // fprintf(stderr, "Failed to daemonize process: %s\n", strerror(errno));
             return 1; //return fork failed
         }
     }
@@ -126,6 +136,15 @@ int main(int argc, char *argv[]) {
 
     QUIT();
     return 0;
+}
+
+void print_current_time() {
+    time_t now = time(NULL);
+    struct tm* current_time = localtime(&now);
+    printf("Current Time: %02d:%02d:%02d\n", 
+        current_time->tm_hour, 
+        current_time->tm_min, 
+        current_time->tm_sec);
 }
 
 void DrawThickLine(SDL_Renderer* renderer, float x1, float y1, float x2, float y2, float thickness, Color color) {
