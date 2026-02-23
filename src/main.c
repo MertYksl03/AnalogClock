@@ -273,15 +273,7 @@ void process_input(SDL_Event event)
                 case SDL_KEYUP:
                     break;
                 case SDL_KEYDOWN:
-                    switch (event.key.keysym.sym)
-                    {
-                        case SDLK_ESCAPE:
-                            is_running = FALSE;
-                            break;
-                        case SDLK_q:
-                            is_running = FALSE;
-                            break;
-                    }
+                    break;
             }
         }
 }
