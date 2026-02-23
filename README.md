@@ -2,8 +2,10 @@
 <div align="center">    
 A simple analog clock built using C and SDL2 library. The clock displays the current time with hour, minute, and second hand.   
 You can use it as a desktop widget or a terminal application to check the time in a visually appealing way.       
+<br><br>
 
 
+<!-- Add a video demonstration of the clock in action -->
 <img src="screenshots/video.gif" alt="Screenshot-03" width="500">
 </div>
 
