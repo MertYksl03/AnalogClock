@@ -19,7 +19,13 @@ SDL_Renderer *renderer = NULL;
 SDL_Surface *shapeSurface = NULL;
 int last_frame_time = 0;
 
+TTF_Font* clockFont = NULL;
+SDL_Texture* numberTextures[12];
+int numberWidths[12];
+int numberHeights[12];
+
 u8 is_running = FALSE;
+u8 is_number_visible = TRUE;
 
 Circle clockCircle;
 MarkerPosition MarkerPositions[60]; //We know that there are 60 markers
@@ -75,7 +81,7 @@ int main(int argc, char *argv[]) {
     
 #if !WebAssembly // disable command line options for now for web demo
     int opt;
-    while ((opt = getopt(argc, argv, "s:ldbth")) != -1) {
+    while ((opt = getopt(argc, argv, "s:ldbthn")) != -1) {
         switch (opt) {
             case 's':
             radius = atoi(optarg); 
@@ -92,16 +98,20 @@ int main(int argc, char *argv[]) {
             case 't':
             print_current_time();
             return 0;
+            case 'n':
+            is_number_visible = FALSE;
+            break;
             case 'h':
-            fprintf(stderr, "Usage: %s [-s radius] [-d] [-l] [-b] [-t]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-s radius] [-d] [-l] [-b] [-t] [-n]\n", argv[0]);
             fprintf(stderr, "  -s radius : Set the diameter of the clock (default: %d)\n", DEFAULT_RADIUS);
             fprintf(stderr, "  -d        : Enable dark mode (default)\n");
             fprintf(stderr, "  -l        : Enable light mode\n");
             fprintf(stderr, "  -b        : Run as a background daemon\n");
             fprintf(stderr, "  -t        : Print the current time and exit\n");
+            fprintf(stderr, "  -n        : Hide numbers on the clock face\n");
             return 0;
             case '?': // getopt returns '?' for unknown options
-            fprintf(stderr, "Usage: %s [-s radius] [-d] [-l] [-b] [-t]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-s radius] [-d] [-l] [-b] [-t] [-n]\n", argv[0]);
             return 1;
         }
     }
@@ -135,6 +145,7 @@ int main(int argc, char *argv[]) {
         secondHandColor = COLOR_RED;
     }
     #endif 
+
     hourHandLength = radius * 0.5f;
     minuteHandLength = radius * 0.75f;
     secondHandLength = radius * 0.9f;
@@ -142,9 +153,13 @@ int main(int argc, char *argv[]) {
     clockCircle = (Circle){radius, radius, radius};
     
     calculateMarkerPositions(MarkerPositions, clockCircle);
+
+    // Change the number size based on the clock radius
+    int fontSize = (int)(radius * 0.15f); // 15% of the radius
+    if (fontSize < 12) fontSize = 12;
+    if (fontSize > 72) fontSize = 72;
     
-    
-    is_running = initialize_window();
+    is_running = initialize_window(is_dark_theme, fontSize);
     
     #if WebAssembly
         emscripten_set_main_loop(main_loop, 0, 1);
@@ -253,7 +268,7 @@ SDL_Surface* CreateCircularMask(int width, int height) {
 }
 #endif
 
-int initialize_window()
+int initialize_window(u8 is_dark_theme, int fontSize)
 {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         fprintf(stderr, "Error initializing SDL: %s\n", SDL_GetError());
@@ -313,6 +328,41 @@ int initialize_window()
     // actually renders as transparent on the web canvas!
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
+    // If numbers are visible, we need to initialize SDL_ttf and load the font
+    if (is_number_visible) {
+        if (TTF_Init() == -1) {
+            fprintf(stderr, "Error initializing SDL_ttf: %s\n", TTF_GetError());
+            return FALSE;
+        }
+    
+        clockFont = TTF_OpenFont("fonts/arial.ttf", fontSize);
+        if (!clockFont) {
+            fprintf(stderr, "Error loading font: %s\n", TTF_GetError());
+            return FALSE;
+        }
+    
+        // Pre-render numbers 1-12 into textures
+        SDL_Color textColor = {255, 255, 255, 255}; // White text
+        if (!is_dark_theme) {
+            textColor = (SDL_Color){0, 0, 0, 255};  // Black text for light mode
+        }
+    
+        for (int i = 0; i < 12; i++) {
+            char numStr[3];
+            sprintf(numStr, "%d", i + 1); // Numbers 1 to 12
+    
+            // Create a surface from the text, then convert to a hardware texture
+            SDL_Surface* textSurface = TTF_RenderText_Blended(clockFont, numStr, textColor);
+            numberTextures[i] = SDL_CreateTextureFromSurface(renderer, textSurface);
+            
+            // Save the width and height so we can center them later
+            numberWidths[i] = textSurface->w;
+            numberHeights[i] = textSurface->h;
+    
+            SDL_FreeSurface(textSurface); // Free the surface, we only need the texture
+        }
+    }
+
     return TRUE;
 }
 
@@ -362,6 +412,7 @@ void render()
         clockCircle.radius
     );
 
+    drawNumbers(clockCircle);
     drawMarkers(MarkerPositions);
     drawClockHands(clockCircle);
 
@@ -452,10 +503,50 @@ void drawClockHands(Circle clockCircle){
     DrawThickLine(renderer, clockCircle.x, clockCircle.y, second_x, second_y, 2.0f, secondHandColor);
 }
 
+void drawNumbers(Circle clockCircle) {
+    float center_x = clockCircle.x;
+    float center_y = clockCircle.y;
+    // Place the numbers slightly closer to the center than the hour markers
+    float numberRadius = clockCircle.radius * 0.70f; 
 
-void QUIT() {
-  // Destroy renderer, window and quit
-  SDL_DestroyRenderer(renderer);
-  SDL_DestroyWindow(window);
-  SDL_Quit();
+    for (int i = 0; i < 12; i++) {
+        int hour = i + 1;
+        // 12 is at 0 degrees, 1 is at 30 degrees, etc.
+        float angle = hour * 30.0f; 
+
+        float x = center_x + numberRadius * sinf(angle * DEG2RAD);
+        float y = center_y - numberRadius * cosf(angle * DEG2RAD);
+
+        // Define where to draw the texture. 
+        // We subtract half the width/height to perfectly center the text on the x/y coordinate.
+        SDL_Rect destRect = {
+            (int)(x - numberWidths[i] / 2.0f),
+            (int)(y - numberHeights[i] / 2.0f),
+            numberWidths[i],
+            numberHeights[i]
+        };
+
+        SDL_RenderCopy(renderer, numberTextures[i], NULL, &destRect);
+    }
+}
+
+
+void QUIT() { 
+    if (is_number_visible) {        
+        //cleanup textures and font
+        // Destroy number textures
+        for (int i = 0; i < 12; i++) {
+            SDL_DestroyTexture(numberTextures[i]);
+        }
+    
+        // Destroy font
+        TTF_CloseFont(clockFont);
+        // Quit TTF subsystem
+        TTF_Quit();
+    }
+
+    // Destroy renderer, window and quit
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 }

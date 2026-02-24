@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_shape.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 #include <time.h>
 #include <math.h>

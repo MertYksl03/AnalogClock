@@ -9,11 +9,12 @@
 
 //FUNCTION PROTOTYPES
 void process_input(SDL_Event event);
-int initialize_window();
+int initialize_window(u8 is_dark_theme, int fontSize);
 void update();
 void render();
 void QUIT();
 
+void drawNumbers(Circle clockCircle);
 void print_current_time();
 void drawMarkers(MarkerPosition* MarkerPositions);
 void calculateMarkerPositions(MarkerPosition* MarkerPositions, Circle clockCircle);
