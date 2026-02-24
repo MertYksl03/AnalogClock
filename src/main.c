@@ -2,8 +2,8 @@
 
 #define WebAssembly 0
 
-#if !webAssembly
-    #include <emscripten.h>
+#if webAssembly
+#include <emscripten.h>
 #endif
 
 #define TRUE 1
