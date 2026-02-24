@@ -19,7 +19,7 @@ You can try the live demo of the AnalogClock running in your web browser using W
 
 ## Compilation and Execution
 To compile and run the AnalogClock program, follow these steps:
-1. Ensure you have the SDL2 library installed on your system.
+1. Ensure you have the SDL2 and SDL2_ttf libraries installed on your system.
 2. Clone the repository or download the source code.
 ``` bash
 git clone https://github.com/MertYksl03/AnalogClock.git
