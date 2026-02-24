@@ -45,6 +45,10 @@ make build
 ```bash 
 ./AnalogClock -l
 ```
+- To toggle the visibility of the numbers on the clock face, use the `-n` option:
+```bash
+./AnalogClock -n
+```
 - To display the current time in the terminal, use the `-t` option:
 ```bash
 ./AnalogClock -t
@@ -61,6 +65,6 @@ make build
 ```
 ## Screenshots 
 <div align="center">
-    <img src="screenshots/01.png" alt="Screenshot-01" width="300"> <img src="screenshots/02.png" alt="Screenshot-02" width="300">
+    <img src="screenshots/01.png" alt="Screenshot-01" width="300"> <img src="screenshots/02.png" alt="Screenshot-02" width="300"> <img src="screenshots/03.png" alt="Screenshot-03" width="300">
 </div>
 
