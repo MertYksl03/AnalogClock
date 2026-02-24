@@ -2,7 +2,7 @@
 
 #define WebAssembly 0
 
-#if webAssembly
+#if !webAssembly
     #include <emscripten.h>
 #endif
 
@@ -64,6 +64,7 @@ int main(int argc, char *argv[]) {
 
     #if WebAssembly
     // Default colors for web (light mode)
+    is_dark_theme = FALSE;
     BackgroundColor = COLOR_RAYWHITE;
     hourMarkerColor = COLOR_BLACK;
     minuteMarkerColor = COLOR_RED;
