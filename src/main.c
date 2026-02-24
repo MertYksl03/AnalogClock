@@ -1,9 +1,15 @@
 #include "main.h"
 
+#define WebAssembly 0
+
+#if webAssembly
+    #include <emscripten.h>
+#endif
+
 #define TRUE 1
 #define FALSE 0
 
-#define DEFAULT_RADIUS 500
+#define DEFAULT_RADIUS 350
 
 #define FPS 30
 #define FRAME_TARGET_TIME 1000 / FPS
@@ -30,21 +36,45 @@ Color hourHandColor;
 Color minuteHandColor;
 Color secondHandColor;
 
-int main(int argc, char *argv[]) {
-    int opt;
+# if WebAssembly
+// SDL main loop
+void main_loop() {
+    // to handle the input
+    SDL_Event event;   
 
+    process_input(event);
+    update();
+    render();
+    
+}
+#endif
+
+int main(int argc, char *argv[]) {
+    
     // Defaults
     int radius = DEFAULT_RADIUS;
     u8 is_dark_theme = TRUE;
     u8 is_daemon = FALSE;
+
+    #if WebAssembly
+    // Default colors for web (light mode)
+    BackgroundColor = COLOR_RAYWHITE;
+    hourMarkerColor = COLOR_BLACK;
+    minuteMarkerColor = COLOR_RED;
+    hourHandColor = COLOR_BLACK;
+    minuteHandColor = COLOR_BLACK;
+    secondHandColor = COLOR_RED;
+    #else 
     BackgroundColor = COLOR_BLACK;
     hourMarkerColor = COLOR_RAYWHITE;
     minuteMarkerColor = COLOR_RED;
     hourHandColor = COLOR_RAYWHITE;
     minuteHandColor = COLOR_RAYWHITE;
     secondHandColor = COLOR_RED;
+    #endif
     
-    
+#if !WebAssembly // disable command line options for now for web demo
+    int opt;
     while ((opt = getopt(argc, argv, "s:ldbth")) != -1) {
         switch (opt) {
             case 's':
@@ -96,15 +126,6 @@ int main(int argc, char *argv[]) {
     printf("Clock initialized: Diameter %d, Dark Mode: %s\n", 
         radius, is_dark_theme ? "Enabled" : "Disabled");
         
-        
-    hourHandLength = radius * 0.5f;
-    minuteHandLength = radius * 0.75f;
-    secondHandLength = radius * 0.9f;
-    
-    clockCircle = (Circle){radius, radius, radius};
-    
-    calculateMarkerPositions(MarkerPositions, clockCircle);
-    
     if (!is_dark_theme) {
         BackgroundColor = COLOR_WHITE;
         hourMarkerColor = COLOR_BLACK;
@@ -113,9 +134,23 @@ int main(int argc, char *argv[]) {
         minuteHandColor = COLOR_BLACK;
         secondHandColor = COLOR_RED;
     }
+    #endif 
+    hourHandLength = radius * 0.5f;
+    minuteHandLength = radius * 0.75f;
+    secondHandLength = radius * 0.9f;
+    
+    clockCircle = (Circle){radius, radius, radius};
+    
+    calculateMarkerPositions(MarkerPositions, clockCircle);
+    
     
     is_running = initialize_window();
-    // to handle the input
+    
+    #if WebAssembly
+        emscripten_set_main_loop(main_loop, 0, 1);
+    #endif
+
+    #if !WebAssembly
     SDL_Event event;    
 
     while (is_running) {
@@ -135,6 +170,7 @@ int main(int argc, char *argv[]) {
     }
 
     QUIT();
+    #endif
     return 0;
 }
 
@@ -181,6 +217,7 @@ void DrawThickLine(SDL_Renderer* renderer, float x1, float y1, float x2, float y
 
 }
 
+#if !WebAssembly // disable command line options for now for web demo --- IGNORE ---
 SDL_Surface* CreateCircularMask(int width, int height) {
     // Create a blank 32-bit surface with an alpha channel
     SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, SDL_PIXELFORMAT_RGBA32);
@@ -214,27 +251,40 @@ SDL_Surface* CreateCircularMask(int width, int height) {
     SDL_UnlockSurface(surface);
     return surface;
 }
+#endif
 
 int initialize_window()
 {
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         fprintf(stderr, "Error initializing SDL: %s\n", SDL_GetError());
         return FALSE;
     }
 
     int diameter =  clockCircle.radius * 2;
+    
+#if WebAssembly
+    // The web canvas does not support OS-level shaped windows
+    window = SDL_CreateWindow(
+        "Clock", 
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
+        diameter, diameter,
+        SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS
+    );
+#else
     window = SDL_CreateShapedWindow(
         "Clock", 
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
         diameter, diameter,
         SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS
     );
-    
+#endif
+
     if(!window) {
         fprintf(stderr, "Error creating SDL window: %s\n", SDL_GetError());
         return FALSE;
     }
 
+#if !WebAssembly 
     shapeSurface = CreateCircularMask(400, 400);
     if (!shapeSurface) {
         printf("Failed to load shape mask!\n");
@@ -242,10 +292,12 @@ int initialize_window()
     }
 
     SDL_WindowShapeMode shapeMode;
-    shapeMode.mode = ShapeModeBinarizeAlpha; //Cut out the transparent parts
-    shapeMode.parameters.binarizationCutoff = 1; // Any alpha value > 1 is visible
+    shapeMode.mode = ShapeModeBinarizeAlpha; 
+    shapeMode.parameters.binarizationCutoff = 1; 
 
     SDL_SetWindowShape(window, shapeSurface, &shapeMode);
+    SDL_FreeSurface(shapeSurface);
+#endif
     
     renderer = SDL_CreateRenderer(
         window,
@@ -253,11 +305,14 @@ int initialize_window()
         SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
     );
     if(!renderer) {
-        fprintf(stderr,"Error creating SDL Renderer");
+        fprintf(stderr,"Error creating SDL Renderer\n");
         return FALSE;
     }
 
-    SDL_FreeSurface(shapeSurface);
+    // IMPORTANT: Enable alpha blending so your transparent background 
+    // actually renders as transparent on the web canvas!
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
     return TRUE;
 }
 

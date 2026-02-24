@@ -4,10 +4,16 @@ A simple analog clock built using C and SDL2 library. The clock displays the cur
 You can use it as a desktop widget or a terminal application to check the time in a visually appealing way.       
 <br><br>
 
-
 <!-- Add a video demonstration of the clock in action -->
 <img src="screenshots/video.gif" alt="Screenshot-03" width="500">
 </div>
+<div align="center">
+<i>This is just a gif demonstration of the clock.</i> 
+</div>
+
+## Live Demo
+You can try the live demo of the AnalogClock running in your web browser using WebAssembly. 
+[Live Demo](https://mertyksl03.github.io/AnalogClock/)
 
 ## Compilation and Execution
 To compile and run the AnalogClock program, follow these steps:
