@@ -5,7 +5,9 @@ You can use it as a desktop widget or a terminal application to check the time i
 <br><br>
 
 <!-- Add a video demonstration of the clock in action -->
+<a href="https://mertyksl03.github.io/AnalogClock/" target="_blank">
 <img src="screenshots/video.gif" alt="Screenshot-03" width="500">
+</a>
 </div>
 <div align="center">
 <i>This is just a gif demonstration of the clock.</i> 
