@@ -1,3 +1,5 @@
+#ifndef COLORS_H
+#define COLORS_H
 typedef struct Color {
     u8 R;
     u8 G;
@@ -21,3 +23,5 @@ Color COLOR_RAYWHITE = {245, 245, 245, 255};
 Color COLOR_RED = {255, 0, 0, 255};
 Color COLOR_GREEN = {0, 255, 0, 255};
 Color COLOR_BLUE = {0, 0, 255, 255};
+
+#endif // COLORS_H

@@ -1,3 +1,6 @@
+#ifndef HEADER_H
+#define HEADER_H
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_shape.h>
 #include <SDL2/SDL_ttf.h>
@@ -41,3 +44,4 @@ typedef struct Time {
 }Time;
 
 
+#endif // HEADER_H
