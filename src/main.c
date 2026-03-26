@@ -2,8 +2,8 @@
 
 #define WebAssembly 0
 
-#if webAssembly
-#include <emscripten.h>
+#if WebAssembly
+    #include <emscripten.h>
 #endif
 
 #define TRUE 1
@@ -26,6 +26,7 @@ int numberHeights[12];
 
 u8 is_running = FALSE;
 u8 is_number_visible = TRUE;
+u8 is_sweep_seconds = FALSE;
 
 Circle clockCircle;
 MarkerPosition MarkerPositions[60]; //We know that there are 60 markers
@@ -65,6 +66,7 @@ int main(int argc, char *argv[]) {
     #if WebAssembly
     // Default colors for web (light mode)
     is_dark_theme = FALSE;
+    is_sweep_seconds = TRUE;
     BackgroundColor = COLOR_RAYWHITE;
     hourMarkerColor = COLOR_BLACK;
     minuteMarkerColor = COLOR_RED;
@@ -82,7 +84,7 @@ int main(int argc, char *argv[]) {
     
 #if !WebAssembly // disable command line options for now for web demo
     int opt;
-    while ((opt = getopt(argc, argv, "s:ldbthn")) != -1) {
+    while ((opt = getopt(argc, argv, "s:ldbthwn")) != -1) {
         switch (opt) {
             case 's':
             radius = atoi(optarg); 
@@ -102,17 +104,21 @@ int main(int argc, char *argv[]) {
             case 'n':
             is_number_visible = FALSE;
             break;
+            case 'w':
+            is_sweep_seconds = TRUE;
+            break;
             case 'h':
-            fprintf(stderr, "Usage: %s [-s radius] [-d] [-l] [-b] [-t] [-n]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-s radius] [-d] [-l] [-b] [-t] [-n] [-w]\n", argv[0]);
             fprintf(stderr, "  -s radius : Set the diameter of the clock (default: %d)\n", DEFAULT_RADIUS);
             fprintf(stderr, "  -d        : Enable dark mode (default)\n");
             fprintf(stderr, "  -l        : Enable light mode\n");
             fprintf(stderr, "  -b        : Run as a background daemon\n");
             fprintf(stderr, "  -t        : Print the current time and exit\n");
             fprintf(stderr, "  -n        : Hide numbers on the clock face\n");
+            fprintf(stderr, "  -w        : Enable sweep (continuous) second hand\n");
             return 0;
             case '?': // getopt returns '?' for unknown options
-            fprintf(stderr, "Usage: %s [-s radius] [-d] [-l] [-b] [-t] [-n]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-s radius] [-d] [-l] [-b] [-t] [-n] [-w]\n", argv[0]);
             return 1;
         }
     }
@@ -134,8 +140,8 @@ int main(int argc, char *argv[]) {
         printf("Radius too large, setting to maximum of 1000.\n");
     }
     
-    printf("Clock initialized: Diameter %d, Dark Mode: %s\n", 
-        radius, is_dark_theme ? "Enabled" : "Disabled");
+    printf("Clock initialized: Diameter %d, Dark Mode: %s, Sweep Mode: %s\n", 
+        radius, is_dark_theme ? "Enabled" : "Disabled", is_sweep_seconds ? "Enabled" : "Disabled");
         
     if (!is_dark_theme) {
         BackgroundColor = COLOR_WHITE;
@@ -386,12 +392,14 @@ void process_input(SDL_Event event)
 
 void update() 
 { 
-    time_t now = time(NULL);
-    struct tm* current_time = localtime(&now);
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    struct tm* current_time = localtime(&ts.tv_sec);
 
     currentTime.hour = current_time->tm_hour % 12;
     currentTime.minute = current_time->tm_min;
     currentTime.second = current_time->tm_sec;
+    currentTime.millisecond = (u16)(ts.tv_nsec / 1000000); // nanoseconds to milliseconds
 }
 
 void SDL_SetRenderDrawColorV(SDL_Renderer* renderer,struct Color color){
@@ -488,7 +496,14 @@ void calculateMinuteHandPosition(float* x_end, float* y_end, Circle clockCircle)
 }
 
 void calculateSecondHandPosition(float* x_end, float* y_end, Circle clockCircle){
-    float second_angle = currentTime.second * 6.0f; // 360 degrees / 60 seconds = 6 degrees per second
+    float second_angle;
+    if (is_sweep_seconds) {
+        // Smooth sweep: include milliseconds for continuous movement
+        second_angle = (currentTime.second + currentTime.millisecond / 1000.0f) * 6.0f;
+    } else {
+        // Ticking: discrete jumps every second
+        second_angle = currentTime.second * 6.0f; // 360 degrees / 60 seconds = 6 degrees per second
+    }
     calculateHandPositions(x_end, y_end, clockCircle, secondHandLength, second_angle);
 }
 

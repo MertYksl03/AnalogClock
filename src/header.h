@@ -41,6 +41,7 @@ typedef struct Time {
     u8 hour;
     u8 minute;
     u8 second;
+    u16 millisecond;
 }Time;
 
 

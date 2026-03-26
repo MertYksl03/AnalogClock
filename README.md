@@ -41,6 +41,10 @@ make build
 ```bash
 ./AnalogClock -s 400
 ```
+- To toggle the sweeping second hand, use the `-w` option:
+```
+./AnalogClock -w
+```
 - You can switch between the clock's color theme with the `-l` or `-d` options for light and dark themes, respectively. For example:
 ```bash 
 ./AnalogClock -l
