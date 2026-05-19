@@ -5,7 +5,7 @@ You can use it as a desktop widget or a terminal application to check the time i
 <br><br>
 
 <!-- Add a video demonstration of the clock in action -->
-<a href="https://mertyksl03.github.io/AnalogClock/" target="_blank">
+<a href="https://mertyuks3l.github.io/AnalogClock/" target="_blank">
 <img src="screenshots/video.gif" alt="Screenshot-03" width="500">
 </a>
 </div>
@@ -15,14 +15,14 @@ You can use it as a desktop widget or a terminal application to check the time i
 
 ## Live Demo
 You can try the live demo of the AnalogClock running in your web browser using WebAssembly. 
-[Live Demo](https://mertyksl03.github.io/AnalogClock/)
+[Live Demo](https://mertyuks3l.github.io/AnalogClock/)
 
 ## Compilation and Execution
 To compile and run the AnalogClock program, follow these steps:
 1. Ensure you have the SDL2 and SDL2_ttf libraries installed on your system.
 2. Clone the repository or download the source code.
 ``` bash
-git clone https://github.com/MertYksl03/AnalogClock.git
+git clone https://github.com/mertyuks3l/AnalogClock.git
 ```
 3. Navigate to the directory containing the source code.
 ```
